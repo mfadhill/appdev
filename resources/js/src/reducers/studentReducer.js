@@ -1,4 +1,3 @@
-// src/reducers/studentReducer.js
 import { SET_STUDENTS } from "../actions/studentActions";
 
 const initialState = {
