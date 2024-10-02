@@ -1,7 +1,11 @@
 // src/components/StudentList.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { addStudent, deleteStudent } from "../actions/studentActions";
+import {
+    addStudent,
+    deleteStudent,
+    fetchStudents,
+} from "../actions/studentActions";
 
 const StudentList = () => {
     const [showModal, setShowModal] = useState(false);
@@ -10,38 +14,61 @@ const StudentList = () => {
         nama: "",
         email: "",
         status: "Aktif",
-        foto: "",
+        foto: null,
     });
 
     const { students } = useSelector((state) => state.students);
     const dispatch = useDispatch();
 
+    // Mengambil data siswa saat komponen dimuat
+    useEffect(() => {
+        dispatch(fetchStudents());
+    }, [dispatch]);
+
     const handleShowModal = () => setShowModal(true);
     const handleCloseModal = () => setShowModal(false);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setNewStudent({
-            ...newStudent,
-            [name]: value,
-        });
+        const { name, type, files } = e.target;
+        if (type === "file") {
+            setNewStudent({
+                ...newStudent,
+                [name]: files[0],
+            });
+        } else {
+            setNewStudent({
+                ...newStudent,
+                [name]: e.target.value,
+            });
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        dispatch(addStudent(newStudent));
+
+        const formData = new FormData();
+        formData.append("kode_siswa", newStudent.kode_siswa);
+        formData.append("nama", newStudent.nama);
+        formData.append("email", newStudent.email);
+        formData.append("status", newStudent.status);
+        formData.append("foto", newStudent.foto);
+
+        // Mengirimkan data siswa baru untuk ditambahkan
+        dispatch(addStudent(formData));
+
+        // Reset form dan tutup modal
         setNewStudent({
             kode_siswa: "",
             nama: "",
             email: "",
             status: "Aktif",
-            foto: "",
+            foto: null,
         });
         handleCloseModal();
     };
 
     const handleDelete = (id) => {
-        dispatch(deleteStudent(id));
+        dispatch(deleteStudent(id)); // Menghapus siswa berdasarkan ID
     };
 
     return (
@@ -55,7 +82,7 @@ const StudentList = () => {
                 </button>
             </div>
 
-            {/* Modal */}
+            {/* Modal untuk menambahkan siswa */}
             {showModal && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
                     <div className="bg-white w-1/3 rounded-lg shadow-lg p-8">
@@ -135,14 +162,14 @@ const StudentList = () => {
                                     className="block text-gray-700 text-sm font-bold mb-2"
                                     htmlFor="foto"
                                 >
-                                    Foto URL
+                                    Foto
                                 </label>
                                 <input
-                                    type="text"
+                                    type="file"
                                     name="foto"
-                                    value={newStudent.foto}
                                     onChange={handleChange}
                                     className="border rounded w-full py-2 px-3 text-gray-700"
+                                    accept="image/*"
                                 />
                             </div>
                             <div className="flex justify-end">
@@ -165,7 +192,7 @@ const StudentList = () => {
                 </div>
             )}
 
-            {/* Tabel Mahasiswa */}
+            {/* Tabel Siswa */}
             <div className="overflow-x-auto mt-8">
                 <table className="table-auto w-full border border-gray-200 shadow-md">
                     <thead>
@@ -179,58 +206,64 @@ const StudentList = () => {
                         </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm font-light">
-                        {!students
-                            ? null
-                            : students.map((student) => (
-                                  <tr
-                                      key={student.id}
-                                      className="border-b border-gray-200 hover:bg-gray-100"
-                                  >
-                                      <td className="py-3 px-6 text-left whitespace-nowrap">
-                                          {student.kode_siswa}
-                                      </td>
-                                      <td className="py-3 px-6 text-left">
-                                          {student.nama}
-                                      </td>
-                                      <td className="py-3 px-6 text-left">
-                                          {student.email}
-                                      </td>
-                                      <td className="py-3 px-6 text-left">
-                                          <span
-                                              className={`py-1 px-3 rounded-full text-xs ${
-                                                  student.status === "Aktif"
-                                                      ? "bg-green-200 text-green-600"
-                                                      : "bg-red-200 text-red-600"
-                                              }`}
-                                          >
-                                              {student.status}
-                                          </span>
-                                      </td>
-                                      <td className="py-3 px-6 text-left">
-                                          {student.foto ? (
-                                              <img
-                                                  src={student.foto}
-                                                  alt={student.nama}
-                                                  className="w-12 h-12 rounded-full"
-                                              />
-                                          ) : (
-                                              <span className="text-gray-400 italic">
-                                                  No Image
-                                              </span>
-                                          )}
-                                      </td>
-                                      <td className="py-3 px-6 text-left">
-                                          <button
-                                              onClick={() =>
-                                                  handleDelete(student.id)
-                                              }
-                                              className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-lg"
-                                          >
-                                              Delete
-                                          </button>
-                                      </td>
-                                  </tr>
-                              ))}
+                        {!students.length ? (
+                            <tr>
+                                <td colSpan="6" className="text-center">
+                                    No Data Available
+                                </td>
+                            </tr>
+                        ) : (
+                            students.map((student) => (
+                                <tr
+                                    key={student.id}
+                                    className="border-b border-gray-200 hover:bg-gray-100"
+                                >
+                                    <td className="py-3 px-6 text-left whitespace-nowrap">
+                                        {student.kode_siswa}
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        {student.nama}
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        {student.email}
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <span
+                                            className={`py-1 px-3 rounded-full text-xs ${
+                                                student.status === "Aktif"
+                                                    ? "bg-green-200 text-green-600"
+                                                    : "bg-red-200 text-red-600"
+                                            }`}
+                                        >
+                                            {student.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        {student.foto ? (
+                                            <img
+                                                src={student.foto}
+                                                alt={student.nama}
+                                                className="w-12 h-12 rounded-full"
+                                            />
+                                        ) : (
+                                            <span className="text-gray-400 italic">
+                                                No Image
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <button
+                                            onClick={() =>
+                                                handleDelete(student.id)
+                                            }
+                                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-lg"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

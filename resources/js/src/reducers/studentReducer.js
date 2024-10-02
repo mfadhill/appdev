@@ -1,23 +1,17 @@
 // src/reducers/studentReducer.js
+import { SET_STUDENTS } from "../actions/studentActions";
+
 const initialState = {
     students: [],
 };
 
 const studentReducer = (state = initialState, action) => {
     switch (action.type) {
-        case "ADD_STUDENT":
+        case SET_STUDENTS:
             return {
                 ...state,
-                students: [...state.students, action.payload],
+                students: action.payload,
             };
-        case "DELETE_STUDENT":
-            return {
-                ...state,
-                students: state.students.filter(
-                    (student) => student.id !== action.payload
-                ),
-            };
-
         default:
             return state;
     }
